@@ -47,3 +47,10 @@ mkcert -install
 mkcert  www.site11.com www.site22.com www.connect11.com
 ```
 
+
+### to test the first party sets use the below command to open chrome with specific flags set 
+
+```
+ open -a "Google chrome" --args --enable-features="FirstPartySets:FirstPartySetsClearSiteDataOnChangedSets/1,StorageAccessAPI,StorageAccessAPIForOriginExtension,PageInfoCookiesSubpage,PrivacySandboxFirstPartySetsUI" \ --use-first-party-set="{\"primary\": \"https://www.site11.com\", \"associatedSites\": [\"https://www.site22.com\", \"https://www.connect11.com\"]}" https://www.site11.com:2001
+```
+
