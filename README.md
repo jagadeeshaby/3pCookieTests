@@ -10,9 +10,11 @@ npm install & npm start
 Access the sites via localhost:2001, localhost:2002, localhost:2003 
 
 
-### to use diffent domain names locally 
+### to use different domain names locally 
 
 `sudo vim /etc/hosts`
+
+Paste the below entries 
 
 ```
 127.0.0.1 www.site11.com
@@ -23,7 +25,7 @@ Access the sites via localhost:2001, localhost:2002, localhost:2003
 
 ```
 
-##@ Now you can access the sites via 
+### Now you can access the sites via 
 
 www.site11.com:2001
 
