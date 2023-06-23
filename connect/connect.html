@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="https://unpkg.com/amazon-connect-streams@2.5.0/release/connect-streams.js"></script>
+</head>
+
+<body>
+<div id="container-div" style="width: 400px; height: 800px;"></div>
+
+<h1>Welcome to my site</h1>
+
+<script>
+
+// document.getElementById("submit").click();
+
+
+</script>
+
+<!-- <iframe src="https://eu-central-1.console.aws.amazon.com/connect/federate/e0094c3d-1cd0-43b0-9031-619fd2d7407d?destination=/connect/ccp-v2"></iframe> -->
+
+
+
+<script type="text/javascript">
+
+
+function init(){
+        connect.core.initCCP(document.getElementById("container-div"), {
+            ccpUrl:"https://jagadeey-fra-saml-1.my.connect.aws/ccp-v2",
+            // ccpUrl: "https://lily-console-gamma-pdx.pdx.proxy.amazon.com/connect/federate/5fb5d6f0-8423-42a8-ad99-b1fc6511be9d?destination=/connect-gamma/ccp-v2",
+            // ccpUrl: "https://jagadeey-sso.awsapps.com/start/#/saml/default/Amazon%20Connect%20IAD/ins-6181f8b8df353fae",
+            // ccpUrl: "https://eu-central-1.console.aws.amazon.com/connect/federate/e0094c3d-1cd0-43b0-9031-619fd2d7407d?destination=/connect/ccp-v2",
+            loginPopup: true,               // optional, defaults to `true`
+            loginPopupAutoClose: true,   // optional, defaults to `false`
+            // REQUIRED for `CHAT`, optional otherwise
+
+            loginUrl: "https://eu-central-1.console.aws.amazon.com/connect/federate/e0094c3d-1cd0-43b0-9031-619fd2d7407d?destination=/connect/ccp-v2",
+            softphone: {
+                allowFramedSoftphone: true,
+                disableRingtone: false,
+            },
+
+            // ccpAckTimeout: 100, //optional, defaults to 3000 (ms)
+            // ccpSynTimeout: 100, //optional, defaults to 1000 (ms)
+            ccpLoadTimeout: 10000 //optional, defaults to 5000 (ms)
+
+        });
+
+
+        // setInterval(() => location.reload(), 2000);
+
+        connect.agent((agent) => {
+            alert(1);
+            agent.onRefresh( (...arguments) => console.log("Agent onRefresh", agent.getStatus(), arguments));
+            agent.onAfterCallWork( (...arguments) => console.log("Agent onAfterCallWork", agent.getStatus(), arguments));
+            agent.onEnqueuedNextState( (...arguments) => console.log("Agent onEnqueuedNextState", agent.getStatus(), arguments));
+            agent.onError( (...arguments) => console.log("Agent onError", agent.getStatus(), arguments));
+            agent.onLocalMediaStreamCreated( (...arguments) => console.log("Agent onLocalMediaStreamCreated", agent.getStatus(), arguments));
+            agent.onNotRoutable( (...arguments) => console.log("Agent onNotRoutable", agent.getStatus(), arguments));
+            agent.onOffline( (...arguments) => console.log("Agent onOffline", agent.getStatus(), arguments));
+            agent.onRoutable( (...arguments) => console.log("Agent onRoutable", agent.getStatus(), arguments));
+            agent.onSoftphoneError( (...arguments) => console.log("Agent onSoftphoneError",agent.getStatus(), arguments));
+            agent.onWebSocketConnectionGained( (...arguments) => console.log("Agent onWebSocketConnectionGained",agent.getStatus(), arguments));
+            agent.onStateChange( (...arguments) => console.log("Agent onStateChange",agent.getStatus(), arguments));
+            agent.onWebSocketConnectionLost( (...arguments) => console.log("Agent onWebSocketConnectionLost", agent.getStatus(), arguments));
+            agent.onRingerDeviceChanged( (...arguments) => console.log("Agent onRingerDeviceChanged", agent.getStatus(), arguments));
+        });
+
+        connect.contact(contact => {
+            console.log(contact);
+            contact.onRefresh((...arguments) => {
+                console.log("Contact onRefresh",contact.getAgentConnection().getStatus().type, contact.getInitialConnection().getStatus().type, arguments)
+            });
+            contact.onACW((...arguments) => console.log("Contact ACW", arguments));
+            contact.onConnecting((...arguments) => console.log("Contact onConnecting", arguments));
+            contact.onAccepted((...arguments) => console.log("Contact onAccepted",  arguments));
+            contact.onConnected((...arguments) => console.log("Contact onConnected", arguments));
+            contact.onDestroy((...arguments) => console.log("Contact onDestroy", arguments));
+            contact.onEnded((...arguments) => console.log("Contact onEnded", arguments));
+            contact.onError((...arguments) => console.log("Contact onError",  arguments));
+            contact.onIncoming((...arguments) => console.log("Contact onIncoming", arguments));
+            contact.onMissed((...arguments) => console.log("Contact onMissed", arguments))
+            contact.onPending((...arguments) => console.log("Contact onPending", arguments));
+
+            contact.onError(() => {
+                if(new connect.Agent().getStatus().name === connect.AgentErrorStates.FAILED_CONNECT_CUSTOMER){
+                    // show message
+                    // Connect OOTB UI Shows - "The customer ended the call"
+                    // This should ideally be indicating that Customer has disconnected the call.
+                }
+            });
+
+            contact.onRefresh(() => {
+                const agentConnectionStatus = contact.getAgentConnection().getStatus().type;
+                const customerConnectionStatus = contact.getInitialConnection().getStatus().type;
+                if(contact.getType() ===  connect.ContactType.VOICE && contact.getStatus().type !== connect.ContactStateType.ERROR ) {
+                    if (agentConnectionStatus === connect.ConnectionStateType.CONNECTING && customerConnectionStatus === connect.ConnectionStateType.DISCONNECTED) {
+                        // show message
+                        // Connect OOTB UI should show - "Customer no longer available"  ( which is coming out as blank today, needs a fix)
+                        // this should be the case where agent is not able to connect to customer ( i tried few of the not working numbers and this
+                        // block always executes
+                    }
+                }
+            });
+
+        });
+
+
+        connect.core.getEventBus().subscribe(connect.EventType.ACK_TIMEOUT, function () {
+            console.log("ACK_TIMEOUTACK_TIMEOUTACK_TIMEOUTACK_TIMEOUTACK_TIMEOUTACK_TIMEOUT");
+        });
+        
+        connect.core.getEventBus().subscribe(connect.EventType.IFRAME_RETRIES_EXHAUSTED, function () {
+            console.log("IFRAME_RETRIES_EXHAUSTEDIFRAME_RETRIES_EXHAUSTEDIFRAME_RETRIES_EXHAUSTEDIFRAME_RETRIES_EXHAUSTEDIFRAME_RETRIES_EXHAUSTED");
+        });
+        
+        connect.core.onAuthFail(() => {
+            console.log("onAuthFailonAuthFailonAuthFailonAuthFailonAuthFailonAuthFailonAuthFail")
+        });
+        
+        connect.core.onAuthorizeSuccess(() => {
+           console.log("onAuthorizeSuccessonAuthorizeSuccessonAuthorizeSuccessonAuthorizeSuccessonAuthorizeSuccess")
+        });
+
+        
+    }
+
+
+
+
+init();
+
+</script>
+</body>
+</html>

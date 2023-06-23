@@ -1,0 +1,88 @@
+<html>
+
+<head>
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+
+    <style>
+        body {
+            background-color: chartreuse
+        }
+    
+        .authorize {
+            margin: 20px 0;
+        }
+    </style>
+
+</head>
+
+
+
+
+<body>
+    <h1>Connect site  - www.connect11.com</h1>
+
+    <div>
+        <button id="popup">Login via Popup</button>
+        <button id="iframe">Login via Iframe</button>
+    </div>
+
+    <div class="authorize">
+        <button id="authorize">Authorize</button>
+        <button id="clearCookies">ClearCookies</button>
+    </div>
+
+    <div>
+        
+    </div>
+    <div id="iframeContainer" style="display: none;"></div>
+
+    <div id="result1"></div>
+
+    <script>
+
+        document.getElementById("popup").addEventListener("click", () => {
+            let params = `scrollbars=no, resizable=no, status=no, location=no, toolbar=no, menubar=no,
+            width=600, height=300, left=100, top=100`;
+            var window = open('/login/', 'login', params);
+        });
+
+        document.getElementById("iframe").addEventListener("click", () => {
+
+            var iframe = document.createElement("iframe");
+            iframe.src = "/login/";
+            document.getElementById("iframeContainer").append(iframe);
+
+            iframe.onload = alert("You are in");
+
+        });
+
+        document.getElementById("authorize").addEventListener("click", async () => {
+            var response = await fetch("/authorize", {
+                credentials: "include"
+            });
+
+            alert(JSON.stringify(await response.json()));
+        });
+
+        document.getElementById("clearCookies").addEventListener("click", async () => {
+            await fetch("/clearall", {
+                credentials: "include"
+            });
+        });
+
+
+
+
+
+
+
+
+
+
+    </script>
+
+    <script src="./init.js"></script>
+    <script src="./permission.js"></script>
+</body>
+
+</html>
