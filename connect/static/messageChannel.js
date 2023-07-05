@@ -37,36 +37,36 @@ popup.addEventListener("click", () => {
 
 var interval;
 
-function onLoad(){
+function onLoad() {
 
- 
+
 
   interval = setInterval(() => {
 
     var channel = new MessageChannel();
     // Listen for messages on port1
-      channel.port1.onmessage = onMessage;
-  // Transfer port2 to the iframe
-  windowRef.postMessage("Hello from the main page!", "*", [
-    channel.port2,
-  ]);
-  }, 3000);  
+    channel.port1.onmessage = onMessage;
+    // Transfer port2 to the iframe
+    windowRef.postMessage("Hello from the main page!", "*", [
+      channel.port2,
+    ]);
+  }, 3000);
 
 }
 
 
-function onMessage(message){
+function onMessage(message) {
 
-  if(message.data.type === "handshake"){
-    clearInterval(interval); 
+  if (message.data.type === "handshake") {
+    clearInterval(interval);
   }
 
-  if(message.data.type === "token"){
+  if (message.data.type === "token") {
     windowRef.close();
     cookieValue = message.data.response;
     alert("logged in successfully");
   }
-  
+
 
 }
 
