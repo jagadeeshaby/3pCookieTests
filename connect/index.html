@@ -68,28 +68,54 @@
 
         var auth_code = new URLSearchParams(location.search).get("connect_auth_code");
 
-        async function getToken() {
-            var response = await fetch("/getToken", {
-                method: "POST",
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    destination: document.referrer ? new URL(document.referrer).hostname : "",
-                    alias: new URL(location.origin).hostname,
-                    connect_auth_code: new URLSearchParams(location.search).get("connect_auth_code"),
-                    code_verifier: getCodeVerifier()
-                })
-            });
 
-            var response = await response.json();
+        async function getParams() {
 
-            if (!response?.accessToken) {
-                await sendTokenCodeChallengeCookie();
-                window.parent?.postMessage("sign-in", document.referrer || location.origin);
-                alert("Please login");
+            var params = {
+                destination: document.referrer ? new URL(document.referrer).hostname : "",
+                alias: new URL(location.origin).hostname,
+            };
+
+            if (auth_code && localStorage.getItem("pkce_code_verifier")) {
+                params.connect_auth_code = auth_code;
+                params.code_verifier = localStorage.getItem("pkce_code_verifier");
             } else {
-                alert("Your Connect session is active");
+                params.code_challenge = await pkce.generateChallenge(getCodeVerifier());
+            }
+
+            return params;
+        }
+
+
+
+
+
+        async function getToken() {
+
+            var params = await getParams();
+
+
+            try {
+                var response = await fetch("/getToken", {
+                    method: "POST",
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(params)
+                });
+
+                var response = await response.json();
+
+                if (!response?.authToken) {
+                    // await sendTokenCodeChallengeCookie();
+                    window.parent?.postMessage("sign-in", document.referrer || location.origin);
+                    alert("Please login");
+                } else {
+                    alert("Your Connect session is active");
+                    localStorage.removeItem("pkce_code_verifier");
+                }
+
+            } catch (e) {
                 localStorage.removeItem("pkce_code_verifier");
             }
         }
@@ -146,6 +172,7 @@
                 cookieValue = "";
             }
         });
+
 
         getToken();
 

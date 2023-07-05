@@ -81,27 +81,32 @@ app.use('/authorize', (req, res, next) => {
 
 app.get('/sign-in', (req, res, next) => {
 
-  var key = `${new URL(req.query.destination).hostname}:${req.headers.host.split(":")[0]}`;
-  var authCode = new Date().getTime();
+  // var key = `${new URL(req.query.destination).hostname}:${req.headers.host.split(":")[0]}`;
+   var authCode = new Date().getTime();
 
-  console.log("before", key, storage.get(key));
+  // console.log("before", key, storage.get(key));
 
-  if (storage.has(key)) {
-    var entry = storage.get(key);
-    entry.authCode = authCode;
-    entry.accessToken = "token";
-    storage.set(key, entry);
-  } else {
-    storage.set(key, {
-      authCode: authCode,
-      accessToken: "token"
-    });
-  }
+  // if (storage.has(key)) {
+  //   var entry = storage.get(key);
+  //   entry.authCode = authCode;
+  //   entry.accessToken = "token";
+  //   storage.set(key, entry);
+  // } else {
+  //   storage.set(key, {
+  //     authCode: authCode,
+  //     accessToken: "token"
+  //   });
+  // }
+
+  storage.set(authCode+"code", {
+    authToken: "token",
+    code: authCode
+  });
 
   var url = new URL(req.query.destination);
   url.searchParams.append("connect_auth_code", authCode);
 
-  console.log(storage.get(key));
+  console.log("new storage", authCode, storage.get(authCode));
 
   res.redirect(url.href);
   res.end();
@@ -117,10 +122,14 @@ app.get('/get-hash', (req, res) => {
 
 
 
-function validateCodeChallenge(challenge, verifier, cookie) {
-  var challengeTovalidate  = cookie || challenge;
-  console.log("cookie", cookie, challenge);
-  return challengeTovalidate == Buffer.from(createHash('sha256').update(verifier || "bacon").digest()).toString('base64');
+function validateCodeChallenge(verifier, cookie) {
+  console.log("cookie", cookie, verifier );
+  return cookie == Buffer.from(createHash('sha256').update(verifier || "bacon").digest()).toString('base64');
+}
+
+
+function getCodeChallengeCookie(cookie){
+  return `connect-auth-code-challenge=${cookie}; Partitioned; Secure; HttpOnly; SameSite=None;Path=/;`;
 }
 
 
@@ -159,7 +168,7 @@ app.post('/tokenCodeChallengeCookie', (req, res, next) => {
   console.log("before", key, storage.get(key));
 
   if (req.cookies["connect-auth-cookie"]) {
-    response.accessToken = req.cookies["connect-auth-cookie"];
+    response.authToken = req.cookies["connect-auth-cookie"];
     res.json(response);
     res.end();
     return;
@@ -172,45 +181,51 @@ app.post('/tokenCodeChallengeCookie', (req, res, next) => {
 
 
 
+app.post('/getToken', (req, res) => {
 
-app.post('/getToken', (req, res, next) => {
-
-  var response = {};
-
-  var key = `${req.body.destination}:${req.body.alias}`;
-  console.log("before", key, storage.get(key));
-
-  var entry = storage.get(key);
-
+  console.log("starting getToken", req.body);
 
   if (req.cookies["connect-auth-cookie"]) {
-    response.accessToken = req.cookies["connect-auth-cookie"];
-    res.json(response);
+    console.log("Login session exists");
+    res.json({success: true, authToken:req.cookies["connect-auth-cookie"] });
     res.end();
     return;
   }
 
-  if (storage.has(key)) {
-    if (req.body.connect_auth_code && entry.authCode == req.body.connect_auth_code && validateCodeChallenge(entry.code_challenge, req.body.code_verifier, req.cookies["connect-auth-code-challenge"])) {
-      response.accessToken = entry.accessToken;
-      storage.delete(key);
+  console.log("retriving storage", req.body.connect_auth_code, storage.get(req.body.connect_auth_code+"code"));
 
- 
+
+  var key = req.body.connect_auth_code+"code";
+
+  if(req.body.connect_auth_code && storage.has(key)){
+    console.log("Key exists", req.body.connect_auth_code,  req.cookies["connect-auth-code-challenge"]);
+    var entries = storage.get(key); 
+    if(validateCodeChallenge(req.body.code_verifier, req.cookies["connect-auth-code-challenge"])){
+      storage.delete(key);
       res.setHeader('set-cookie', [
-          `connect-auth-cookie=${response.accessToken}; Partitioned; Secure; HttpOnly; SameSite=None;Path=/;`,
-          'connect-auth-code-challenge=dummy; Partitioned; Secure; HttpOnly; SameSite=None;Path=/; max-age=0'
-      ]);
-      
-      // res.cookie("connect-auth-cookie",response.accessToken, {Partitioned: true} )
-      res.json(response);
+        `connect-auth-cookie=${entries.authToken}; Partitioned; Secure; HttpOnly; SameSite=None;Path=/;`,
+        'connect-auth-code-challenge=dummy; Partitioned; Secure; HttpOnly; SameSite=None;Path=/; max-age=0'
+    ]);
+    res.json({success: true, authToken: entries.authToken});
+    res.end();
+    return;
+    }else{
+      res.json({success: false});
       res.end();
       return;
     }
+  }else if(req.body.code_challenge){
+    console.log("Save code_challenge");
+    var codeChallengeCookie = getCodeChallengeCookie(req.body.code_challenge);
+    res.setHeader('set-cookie', [codeChallengeCookie]);
+    res.json({success: true});
+    res.end();
+    return;
   }
 
-  console.log("after", key, storage.get(key));
+  console.log("Login session doesn't exists need to login");
 
-  res.json(response);
+  res.json({success: false});
   res.end();
 });
 
