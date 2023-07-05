@@ -19,9 +19,41 @@
 
     <h1> Amazing customer Site 1</h1>
 
-    <iframe src="https://www.connect11.com:3000" sandbox="allow-storage-access-by-user-activation
+
+    <!-- <a href="/sso?destination=https://site11.com">Login Via SSO</button> -->
+
+
+<div id="iframeContainer"></div>
+<!-- 
+    <iframe src="https://www.connect11.com:2003#connect_auth_code=123" sandbox="allow-storage-access-by-user-activation
     allow-scripts
-    allow-same-origin allow-modals allow-popups"> </iframe>
+    allow-same-origin allow-modals allow-popups allow-popups-to-escape-sandbox"> </iframe>
+ -->
+
+
+ <h1 id="sign-in" style="display:none;">
+    <a href="/sso">Login</a>
+ </h1>
+
+    <script>
+        
+        var search = location.search;
+        
+        var iframe = document.createElement("iframe");
+            iframe.src = "https://www.connect11.com:2003"+ search;
+            iframe.sandbox = "allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-modals allow-popups allow-popups-to-escape-sandbox";
+            document.getElementById("iframeContainer").append(iframe);
+
+        
+        window.onmessage = (response) => {
+            if(response.origin === "https://www.connect11.com:2003" && response.data === "sign-in"){
+            //   location.href = "/sso";
+                document.getElementById("sign-in").style = "display:block;"
+            }
+        };
+        
+        </script>
+        
 
 </body>
 

@@ -49,7 +49,7 @@ function init(){
         // setInterval(() => location.reload(), 2000);
 
         connect.agent((agent) => {
-            alert(1);
+        
             agent.onRefresh( (...arguments) => console.log("Agent onRefresh", agent.getStatus(), arguments));
             agent.onAfterCallWork( (...arguments) => console.log("Agent onAfterCallWork", agent.getStatus(), arguments));
             agent.onEnqueuedNextState( (...arguments) => console.log("Agent onEnqueuedNextState", agent.getStatus(), arguments));

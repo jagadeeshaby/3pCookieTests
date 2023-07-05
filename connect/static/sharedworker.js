@@ -1,11 +1,11 @@
 const allMessagePorts = [];
 
-setInterval(() =>  {
-  allMessagePorts.forEach(messagePort => messagePort.postMessage({type: "auth", message: "SharedWorker: refreshing Auth"}));
-  fetchAuth().then((json) => {
-    allMessagePorts.forEach(messagePort => messagePort.postMessage({type: "auth", message: `SharedWorker: refreshed Auth ${JSON.stringify(json)}`}));
-  });
-}, 3000);
+// setInterval(() =>  {
+//   allMessagePorts.forEach(messagePort => messagePort.postMessage({type: "auth", message: "SharedWorker: refreshing Auth"}));
+//   fetchAuth().then((json) => {
+//     allMessagePorts.forEach(messagePort => messagePort.postMessage({type: "auth", message: `SharedWorker: refreshed Auth ${JSON.stringify(json)}`}));
+//   });
+// }, 3000);
 
 
 onconnect = function (event) {
@@ -19,6 +19,7 @@ onconnect = function (event) {
   port.onmessage = function (e) {
 
     switch(e.data.type){
+      
 
       case 'sync':  
         port.postMessage({type: "ack", message: "SharedWorker: Yes!!"});

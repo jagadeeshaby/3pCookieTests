@@ -2,7 +2,7 @@
 function initSharedWorker() {
 
   if (!!window.SharedWorker) {
-    const myWorker = new SharedWorker("sharedworker.js", 'test');
+    const myWorker = new SharedWorker("/static/sharedworker.js", 'test');
 
     myWorker.onerror = (e) => {
       console.log(e);
@@ -85,7 +85,7 @@ function initSharedWorker() {
 
       }
 
-      console.log(e);
+      // console.log(e);
     };
   }
 

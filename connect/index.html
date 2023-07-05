@@ -7,44 +7,109 @@
         body {
             background-color: chartreuse
         }
-    
+
         .authorize {
             margin: 20px 0;
+        }
+
+        .login-buttons button {
+            margin: 5px 0;
+        }
+
+        #popup {
+            background: yellow
         }
     </style>
 
 </head>
 
 
-
-
 <body>
-    <h1>Connect site  - www.connect11.com</h1>
+    <h1>Connect site - www.connect11.com</h1>
 
-    <div>
-        <button id="popup">Login via Popup</button>
+    <!-- <h2>
+        Status : <span id="status"> No cookies</span>
+    </h2> -->
+
+    <div class="login-buttons">
         <button id="iframe">Login via Iframe</button>
+        <button id="popup-message-channel">Login via Popup with Message channel</button>
+        <button id="popup">Login via Popup</button>
     </div>
 
     <div class="authorize">
-        <button id="authorize">Authorize</button>
+        <button id="authorize">Make a outbound call</button>
         <button id="clearCookies">ClearCookies</button>
+        <button id="getToken">Get Tokens</button>
     </div>
 
     <div>
-        
+
     </div>
     <div id="iframeContainer" style="display: none;"></div>
 
     <div id="result1"></div>
 
+    <script src="./static/pkce.js"></script>
+
     <script>
 
-        document.getElementById("popup").addEventListener("click", () => {
-            let params = `scrollbars=no, resizable=no, status=no, location=no, toolbar=no, menubar=no,
-            width=600, height=300, left=100, top=100`;
-            var window = open('/login/', 'login', params);
-        });
+        function getCodeVerifier() {
+
+            if (!localStorage.getItem("pkce_code_verifier")) {
+                var verifier = pkce.generateVerifier();
+                localStorage.setItem("pkce_code_verifier", verifier);
+                localStorage.setItem("state", location.search);
+            }
+
+            return localStorage.getItem("pkce_code_verifier");
+        }
+
+
+        var auth_code = new URLSearchParams(location.search).get("connect_auth_code");
+
+        async function getToken() {
+            var response = await fetch("/getToken", {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    destination: document.referrer ? new URL(document.referrer).hostname : "",
+                    alias: new URL(location.origin).hostname,
+                    connect_auth_code: new URLSearchParams(location.search).get("connect_auth_code"),
+                    code_verifier: getCodeVerifier()
+                })
+            });
+
+            var response = await response.json();
+
+            if (!response?.accessToken) {
+                await sendTokenCodeChallenge();
+                window.parent?.postMessage("sign-in", document.referrer || location.origin);
+                alert("Please login");
+            } else {
+                alert("Your Connect session is active");
+                localStorage.removeItem("pkce_code_verifier");
+            }
+        }
+
+
+        async function sendTokenCodeChallenge() {
+            var response = await fetch("/tokenCodeChallenge", {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    destination: document.referrer ? new URL(document.referrer).hostname : "",
+                    alias: new URL(location.origin).hostname,
+                    code_challenge: await pkce.generateChallenge(getCodeVerifier())
+                })
+            });
+        }
+
+        document.getElementById("getToken").addEventListener("click", getToken);
 
         document.getElementById("iframe").addEventListener("click", () => {
 
@@ -52,37 +117,30 @@
             iframe.src = "/login/";
             document.getElementById("iframeContainer").append(iframe);
 
-            iframe.onload = alert("You are in");
+            iframe.onload = alert("You are successfully logged in..");
 
-        });
-
-        document.getElementById("authorize").addEventListener("click", async () => {
-            var response = await fetch("/authorize", {
-                credentials: "include"
-            });
-
-            alert(JSON.stringify(await response.json()));
         });
 
         document.getElementById("clearCookies").addEventListener("click", async () => {
             await fetch("/clearall", {
                 credentials: "include"
             });
+
+            if (cookieValue) {
+                cookieValue = "";
+            }
         });
 
-
-
-
-
-
-
-
-
+        getToken();
 
     </script>
 
-    <script src="./init.js"></script>
-    <script src="./permission.js"></script>
+    <script src="/static/init.js"></script>
+    <script src="/static/permission.js"></script>
+    <script src="/static/messageChannel.js"></script>
+
+
+
 </body>
 
 </html>

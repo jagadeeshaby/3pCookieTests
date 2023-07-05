@@ -33,6 +33,17 @@ app.use(logger('dev'));
 // The mount-path "/static" is simply removed before
 // passing control to the express.static() middleware,
 // thus it serves the file correctly by ignoring "/static"
+
+
+
+app.get('/sso', (req, res, next) => {
+  // let data = req.body;
+  // res.send('Data Received: ' + JSON.stringify(data));
+// console.log(req);
+  res.redirect('https://www.connect11.com:2003/sign-in?destination=https://www.site11.com:2001?source=customer')
+});
+
+
 app.use('/*', express.static(path.join(__dirname, '/')));
 
 // if for some reason you want to serve files from
@@ -47,6 +58,8 @@ app.use('/*', express.static(path.join(__dirname, '/')));
 // console.log('  GET /hello.txt');
 // console.log('  GET /js/app.js');
 // console.log('  GET /css/style.css');
+
+
 
 
 
