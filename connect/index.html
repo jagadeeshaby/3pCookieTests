@@ -85,7 +85,7 @@
             var response = await response.json();
 
             if (!response?.accessToken) {
-                await sendTokenCodeChallenge();
+                await sendTokenCodeChallengeCookie();
                 window.parent?.postMessage("sign-in", document.referrer || location.origin);
                 alert("Please login");
             } else {
@@ -108,6 +108,22 @@
                 })
             });
         }
+
+
+
+        async function sendTokenCodeChallengeCookie() {
+            var response = await fetch("/tokenCodeChallengeCookie", {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    code_challenge: await pkce.generateChallenge(getCodeVerifier())
+                })
+            });
+        }
+
+
 
         document.getElementById("getToken").addEventListener("click", getToken);
 

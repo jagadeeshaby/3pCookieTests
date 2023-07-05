@@ -117,11 +117,11 @@ app.get('/get-hash', (req, res) => {
 
 
 
-function validateCodeChallenge(challenge, verifier) {
-  return challenge == Buffer.from(createHash('sha256').update(verifier || "bacon").digest()).toString('base64');
+function validateCodeChallenge(challenge, verifier, cookie) {
+  var challengeTovalidate  = cookie || challenge;
+  console.log("cookie", cookie, challenge);
+  return challengeTovalidate == Buffer.from(createHash('sha256').update(verifier || "bacon").digest()).toString('base64');
 }
-
-
 
 
 app.post('/tokenCodeChallenge', (req, res, next) => {
@@ -153,6 +153,25 @@ app.post('/tokenCodeChallenge', (req, res, next) => {
 
 
 
+app.post('/tokenCodeChallengeCookie', (req, res, next) => {
+  var response = {};
+  var key = `${req.body.destination}:${req.body.alias}`;
+  console.log("before", key, storage.get(key));
+
+  if (req.cookies["connect-auth-cookie"]) {
+    response.accessToken = req.cookies["connect-auth-cookie"];
+    res.json(response);
+    res.end();
+    return;
+  }
+
+  res.setHeader('set-cookie', `connect-auth-code-challenge=${req.body.code_challenge}; Partitioned; Secure; HttpOnly; SameSite=None;Path=/;`);
+  res.json(response);
+  res.end();
+});
+
+
+
 
 app.post('/getToken', (req, res, next) => {
 
@@ -172,10 +191,11 @@ app.post('/getToken', (req, res, next) => {
   }
 
   if (storage.has(key)) {
-    if (req.body.connect_auth_code && entry.authCode == req.body.connect_auth_code && validateCodeChallenge(entry.code_challenge, req.body.code_verifier)) {
+    if (req.body.connect_auth_code && entry.authCode == req.body.connect_auth_code && validateCodeChallenge(entry.code_challenge, req.body.code_verifier, req.cookies["connect-auth-code-challenge"])) {
       response.accessToken = entry.accessToken;
       storage.delete(key);
       res.setHeader('set-cookie', `connect-auth-cookie=${response.accessToken}; Partitioned; Secure; HttpOnly; SameSite=None;Path=/;`);
+      res.setHeader('set-cookie', 'connect-auth-code-challenge=dummy; Partitioned; Secure; HttpOnly; SameSite=None;Path=/; max-age=0');
       res.json(response);
       res.end();
       return;
