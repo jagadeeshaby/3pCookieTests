@@ -194,8 +194,14 @@ app.post('/getToken', (req, res, next) => {
     if (req.body.connect_auth_code && entry.authCode == req.body.connect_auth_code && validateCodeChallenge(entry.code_challenge, req.body.code_verifier, req.cookies["connect-auth-code-challenge"])) {
       response.accessToken = entry.accessToken;
       storage.delete(key);
-      res.setHeader('set-cookie', `connect-auth-cookie=${response.accessToken}; Partitioned; Secure; HttpOnly; SameSite=None;Path=/;`);
-      res.setHeader('set-cookie', 'connect-auth-code-challenge=dummy; Partitioned; Secure; HttpOnly; SameSite=None;Path=/; max-age=0');
+
+ 
+      res.setHeader('set-cookie', [
+          `connect-auth-cookie=${response.accessToken}; Partitioned; Secure; HttpOnly; SameSite=None;Path=/;`,
+          'connect-auth-code-challenge=dummy; Partitioned; Secure; HttpOnly; SameSite=None;Path=/; max-age=0'
+      ]);
+      
+      // res.cookie("connect-auth-cookie",response.accessToken, {Partitioned: true} )
       res.json(response);
       res.end();
       return;
