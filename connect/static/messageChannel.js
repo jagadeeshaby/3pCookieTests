@@ -38,19 +38,16 @@ popup.addEventListener("click", () => {
 var interval;
 
 function onLoad() {
-
-
-
   interval = setInterval(() => {
-
     var channel = new MessageChannel();
     // Listen for messages on port1
     channel.port1.onmessage = onMessage;
     // Transfer port2 to the iframe
-    windowRef.postMessage("Hello from the main page!", "*", [
+    // We only send it to the origin we trust
+    windowRef.postMessage("Hello from the main page!", "https://jagadeey-saml-iad-1.awsapps.com", [
       channel.port2,
     ]);
-  }, 3000);
+  }, 2000);
 
 }
 
@@ -66,10 +63,7 @@ function onMessage(message) {
     cookieValue = message.data.response;
     alert("logged in successfully");
   }
-
-
 }
-
 
 
 // function onLoad() {
